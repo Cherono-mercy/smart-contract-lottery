@@ -18,14 +18,18 @@ contract DeployRaffle is Script {
         //if on sepolia, get the sepolia config
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
-        if(config.subscriptionId == 0) {
+        if (config.subscriptionId == 0) {
             //Create subscription
             CreateSubscription createSubscription = new CreateSubscription();
-            (config.subscriptionId, config.vrfCoordinator) = createSubscription.createSubscription(config.vrfCoordinator, config.account);
+            (config.subscriptionId, config.vrfCoordinator) =
+                createSubscription.createSubscription(config.vrfCoordinator, config.account);
 
-            //Then Fund the Subscription 
+            //Then Fund the Subscription
             FundSubscription fundSubscription = new FundSubscription();
             fundSubscription.fundSubscription(config.vrfCoordinator, config.subscriptionId, config.link, config.account);
+
+            //Persist the newly-created VRF config so the next helper lookup sees the same subscriptionId.
+            helperConfig.setConfig(config);
         }
 
         vm.startBroadcast(config.account);
@@ -40,7 +44,7 @@ contract DeployRaffle is Script {
         vm.stopBroadcast();
 
         AddConsumer addConsumer = new AddConsumer();
-        //don't need to broadcast 
+        //don't need to broadcast
         addConsumer.addConsumer(address(raffle), config.vrfCoordinator, config.subscriptionId, config.account);
         return (raffle, helperConfig);
     }
