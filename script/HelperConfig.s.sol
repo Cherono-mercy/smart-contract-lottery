@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
 import {VRFCoordinatorV2_5Mock} from "lib/chainlink-evm/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
-import {LinkToken} from "test/mocks/LinkToken.sol"; 
+import {LinkToken} from "test/mocks/LinkToken.sol";
 
 abstract contract CodeConstants {
     /* VRF Mock Values */
@@ -15,6 +15,7 @@ abstract contract CodeConstants {
 
     uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11155111;
     uint256 public constant LOCAL_CHAIN_ID = 31337;
+    address public constant LOCAL_ACCOUNT = 0xf39Fd6e51D6e1B3c3b0B0dF7f06F7E8aC4E0A255;
 }
 
 contract HelperConfig is Script, CodeConstants {
@@ -37,6 +38,14 @@ contract HelperConfig is Script, CodeConstants {
 
     constructor() {
         networkConfigs[ETH_SEPOLIA_CHAIN_ID] = getSepoliaEthConfig();
+    }
+
+    function setConfig(NetworkConfig memory config) public {
+        if (block.chainid == LOCAL_CHAIN_ID) {
+            localNetworkConfig = config;
+        } else {
+            networkConfigs[block.chainid] = config;
+        }
     }
 
     function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
@@ -77,7 +86,7 @@ contract HelperConfig is Script, CodeConstants {
         vm.startBroadcast();
         VRFCoordinatorV2_5Mock vrfCoordinatorMock =
             new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UNIT_LINK);
-        LinkToken linkToken = new LinkToken();    
+        LinkToken linkToken = new LinkToken();
         vm.stopBroadcast();
 
         localNetworkConfig = NetworkConfig({
@@ -89,7 +98,7 @@ contract HelperConfig is Script, CodeConstants {
             subscriptionId: 0,
             callbackGasLimit: 500000,
             link: address(linkToken),
-            account: 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38
+            account: LOCAL_ACCOUNT
         });
         return localNetworkConfig;
     }
